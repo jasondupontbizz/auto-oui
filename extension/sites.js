@@ -9,18 +9,19 @@
       origins: ['https://chatgpt.com', 'https://chat.openai.com'],
       selectors: {
         // Messages de l'agent : ChatGPT classique + bulles de la vue agent Work (/dots/).
-        assistant: '[data-message-author-role="assistant"], article.message-row:not(.self) .message-bubble',
+        // + nouvelle interface ChatGPT (2026) : blocs [data-content-search-unit-key$=":assistant"].
+        assistant: '[data-message-author-role="assistant"], article.message-row:not(.self) .message-bubble, [data-content-search-unit-key$=":assistant"]',
         // Messages de l'utilisateur (les lignes .self de la vue Work sont les tiens).
-        user: '[data-message-author-role="user"], article.message-row.self .message-bubble',
+        user: '[data-message-author-role="user"], article.message-row.self .message-bubble, [data-content-search-unit-key$=":user"]',
         // Champ de saisie : textarea classique ou éditeur ProseMirror.
         input: '#prompt-textarea, textarea[data-testid="prompt-textarea"], textarea[placeholder], [contenteditable="true"][role="textbox"]',
-        send: '[data-testid="send-button"], #composer-submit-button, button[aria-label="Send"], button[aria-label="Send prompt"], button[aria-label="Send message"], button[aria-label="Envoyer le message"], button[aria-label="Envoyer"]',
+        send: '[data-testid="send-button"], #composer-submit-button, button[aria-label="Send"], button[aria-label="Send prompt"], button[aria-label="Send message"], button[aria-label="Envoyer le message"], button[aria-label="Envoyer"], button[aria-label^="Send" i], button[aria-label^="Envoyer" i], form button[type="submit"]',
         // Bouton visible pendant que l'agent écrit encore.
-        stop: '[data-testid="stop-button"], button[aria-label="Stop generating"], button[aria-label="Arrêter la génération"], button[aria-label="Stop streaming"]',
+        stop: '[data-testid="stop-button"], button[aria-label="Stop generating"], button[aria-label="Arrêter la génération"], button[aria-label="Stop streaming"], button[aria-label^="Stop" i], button[aria-label^="Arrêter" i]',
         // Message en cours de génération (optionnel).
         streaming: '[data-message-author-role="assistant"][data-is-streaming="true"]',
         // Conteneur d'un tour de conversation, où chercher les cartes d'approbation (optionnel).
-        turn: '[data-testid^="conversation-turn"], article[data-turn]'
+        turn: '[data-testid^="conversation-turn"], article[data-turn], [data-content-search-turn-key]'
       }
     }
   ];

@@ -221,3 +221,36 @@ test('pending Jev analysis cannot act after disable, route change or new human m
     resolve({ probability: 0.99 }); await work; assert.equal(h.sent, 0, mutation); h.close();
   }
 });
+test('ChatGPT 2026 layout: lastMessage() reads [data-content-search-unit-key] units', async () => {
+  const unit = (key, html) => `<div data-content-search-turn-key="${key.split(':').slice(0, 2).join(':')}"><div data-content-search-unit-key="${key}">${html}</div></div>`;
+  const html = unit('fallback-turn-0:0:user', 'Crée un petit site de démo') + unit('fallback-turn-0:2:assistant', '<p>Tu confirmes que je peux créer le dossier site-demo ?</p>');
+  const dom = new JSDOM(`<main>${html}</main>`, { url: 'https://chatgpt.com/c/test', runScripts: 'outside-only', pretendToBeVisual: true });
+  const w = dom.window;
+  w.HTMLElement.prototype.getClientRects = function () { return this.hidden ? [] : [{ width: 100, height: 20 }]; };
+  for (const source of sources.slice(0, 3)) w.eval(source);
+  const latest = w.AutoOuiAdapters.lastMessage(w.AutoOuiCore.DEFAULTS);
+  assert.ok(latest, 'assistant unit found');
+  assert.equal(latest.text, 'Tu confirmes que je peux créer le dossier site-demo ?');
+  assert.ok(w.AutoOuiCore.localApproval(latest.text));
+  // A later user unit means the question was already answered.
+  w.document.querySelector('main').insertAdjacentHTML('beforeend', unit('fallback-turn-0:3:user', 'Oui'));
+  assert.equal(w.AutoOuiAdapters.lastMessage(w.AutoOuiCore.DEFAULTS), null);
+  w.close();
+});
+test('filenames with dots inside an approval question do not break detection', async () => {
+  const dom = new JSDOM('', { runScripts: 'outside-only' }); dom.window.eval(sources[0]);
+  const { localApproval } = dom.window.AutoOuiCore;
+  for (const text of [
+    'Tu confirmes que je peux créer le fichier index.html à la racine de site-demo ?',
+    'Tu confirmes que je peux ajouter style.css pour la mise en page ?',
+    'Puis-je compresser le dossier en site-demo.zip ?',
+    'Es-tu d’accord pour que je remplace index.html par la nouvelle version ?',
+    'May I overwrite style.css with the new theme?'
+  ]) assert.equal(localApproval(text), true, text);
+  for (const text of [
+    'J’ai créé index.html et style.css. Je continue avec site-demo.zip.',
+    'Tu confirmes. Je crée le fichier index.html maintenant, tu veux voir le résultat ?',
+    'Le fichier index.html est prêt.'
+  ]) assert.equal(localApproval(text), false, text);
+  dom.window.close();
+});

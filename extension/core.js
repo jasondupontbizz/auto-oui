@@ -20,21 +20,21 @@
     // FR : « M'autorises-tu… », « Autorisez-vous… »
     /\b(?:(?:m'|me |nous )?autorises?[- ]tu|autorisez[- ]vous)\b/,
     // FR : « Tu confirmes … ? », « Vous m'autorisez … ? »
-    /\b(?:tu |vous )(?:(?:me |nous )?autorise[sz]|confirmes?|confirmez)\b[^.!?]{0,100}\?/,
+    /\b(?:tu |vous )(?:(?:me |nous )?autorise[sz]|confirmes?|confirmez)\b(?:[^.!?]|\.(?=\S)){0,100}\?/,
     // FR : « Confirmes-tu… »
     /\bconfirme[sz]?[- ](?:tu|vous)\b/,
     // FR : « Acceptes-tu… », « Approuves-tu… »
-    /\b(?:acceptes?[- ]tu|acceptez[- ]vous|approuves?[- ]tu|approuvez[- ]vous)\b[^.!?]{0,240}\?/,
+    /\b(?:acceptes?[- ]tu|acceptez[- ]vous|approuves?[- ]tu|approuvez[- ]vous)\b(?:[^.!?]|\.(?=\S)){0,240}\?/,
     // FR : « Peux-tu confirmer / autoriser / approuver… »
     /\b(?:peux[- ]tu|pouvez[- ]vous)\s+(?:me\s+)?(?:confirmer|autoriser|approuver|valider|donner (?:ton|votre) (?:accord|feu vert))\b/,
     // FR : « Puis-je… ? », « Est-ce que je peux… ? »
-    /\b(?:puis-je|pouvons-nous|est-ce que je peux)\b[^.!?]{0,240}\?/,
+    /\b(?:puis-je|pouvons-nous|est-ce que je peux)\b(?:[^.!?]|\.(?=\S)){0,240}\?/,
     // FR : « Es-tu d'accord pour… ? », « Tu es d'accord… ? »
-    /\b(?:es-tu|etes-vous|tu es|vous etes) d'accord\b[^.!?]{0,200}\?/,
+    /\b(?:es-tu|etes-vous|tu es|vous etes) d'accord\b(?:[^.!?]|\.(?=\S)){0,200}\?/,
     // FR : « J'ai besoin de ton accord », « J'attends ta confirmation »
-    /\b(?:j'ai besoin|il (?:me )?faut|j'attends|je suis en attente)\b[^.!?]{0,100}\b(?:ton|ta|votre|de ton|de ta|de votre) (?:accord|autorisation|approbation|confirmation|feu vert|validation)\b/,
+    /\b(?:j'ai besoin|il (?:me )?faut|j'attends|je suis en attente)\b(?:[^.!?]|\.(?=\S)){0,100}\b(?:ton|ta|votre|de ton|de ta|de votre) (?:accord|autorisation|approbation|confirmation|feu vert|validation)\b/,
     // EN
-    /\b(?:do (?:you|i) have (?:your )?permission|may i|shall i|can i proceed|can i go ahead|should i (?:continue|proceed|go ahead)|would you like me to|do you want me to|do you approve|is it ok(?:ay)? (?:if i|to)|ok(?:ay)? to proceed)\b[^.!?]{0,200}\?/,
+    /\b(?:do (?:you|i) have (?:your )?permission|may i|shall i|can i proceed|can i go ahead|should i (?:continue|proceed|go ahead)|would you like me to|do you want me to|do you approve|is it ok(?:ay)? (?:if i|to)|ok(?:ay)? to proceed)\b(?:[^.!?]|\.(?=\S)){0,200}\?/,
     /\b(?:please (?:approve|authorize|confirm)|awaiting your (?:approval|permission|confirmation)|i need your (?:approval|permission|go-ahead))\b/
   ];
   // Explanations or quotations *about* approval requests are not requests.

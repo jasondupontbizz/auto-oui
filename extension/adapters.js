@@ -35,6 +35,8 @@
     const value = text(last);
     if (!value) return null;
     const id = last.getAttribute('data-message-id') || last.closest('[data-message-id]')?.getAttribute('data-message-id')
+      || last.getAttribute('data-chatgpt-search-message-ids') || last.querySelector('[data-chatgpt-search-message-ids]')?.getAttribute('data-chatgpt-search-message-ids')
+      || last.querySelector('[data-dil-message-id], [data-chatgpt-selection-message-id]')?.getAttribute('data-dil-message-id')
       || last.closest('[data-turn-id]')?.getAttribute('data-turn-id') || String(nodes.length);
     const context = nodes.slice(-4, -1).map(node => `${node.matches(s.user) ? 'user' : 'assistant'}: ${text(node)}`).join('\n').slice(-4000);
     return { element: last, text: value, id, context };
@@ -101,7 +103,23 @@
       if (value.length < 25 || node.parentElement.closest('pre, code, script, style, textarea, input, [contenteditable="true"], button') || !visible(node.parentElement)) continue;
       candidates.push({ snippet: value.slice(0, 180), ancestors: [node.parentElement, node.parentElement.parentElement, node.parentElement.parentElement?.parentElement].filter(Boolean).map(describe) });
     }
-    return { version: root.chrome?.runtime?.getManifest?.().version, origin: location.origin, matches, streaming: streaming(settings), controls, recentTextStructure: candidates.slice(-8) };
+    const full = el => ({ tag: el.tagName?.toLowerCase(), id: el.id || undefined, class: String(el.className || '').slice(0, 160),
+      // Pas de liens, sources ni valeurs : uniquement la structure (attributs role/aria/data-*).
+      attrs: Object.fromEntries([...el.attributes].filter(a => !/^(?:class|id|style|href|src|srcset|action|value|title|alt)$/.test(a.name)).map(a => [a.name, a.value.slice(0, 80)])) });
+    const deep = [];
+    const w2 = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let n2;
+    while ((n2 = w2.nextNode())) {
+      const v = n2.textContent.trim();
+      // Barre latérale (titres de tes conversations) exclue, comme le texte masqué.
+      if (v.length < 20 || !n2.parentElement || n2.parentElement.closest('script, style, textarea, input, [contenteditable="true"], nav, aside') || !visible(n2.parentElement)) continue;
+      const chain = []; let e = n2.parentElement;
+      for (let i = 0; e && e !== document.body && i < 14; i++, e = e.parentElement) chain.push(full(e));
+      deep.push({ snippet: v.slice(0, 120), chain });
+    }
+    const extra = { mains: document.querySelectorAll('main').length, iframes: [...document.querySelectorAll('iframe')].map(f => { try { const u = new URL(f.src); return u.origin; } catch { return ''; } }),
+      shadowHosts: [...document.querySelectorAll('*')].filter(el => el.shadowRoot).map(el => el.tagName.toLowerCase()).slice(0, 20), deepText: deep.slice(-6) };
+    return { version: root.chrome?.runtime?.getManifest?.().version, origin: location.origin, matches, streaming: streaming(settings), controls, recentTextStructure: candidates.slice(-8), extra };
   }
   root.AutoOuiAdapters = { SELECTORS, visible, enabled, label, text, inputValue, validateSelectors, lastMessage, composer, sendButton, streaming, approvalButton, fill, diagnostics };
 })(globalThis);
