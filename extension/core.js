@@ -1,7 +1,9 @@
 // Logique pure (sans DOM) : détection des demandes d'approbation et validation des réglages.
 (function (root) {
+  // mode : 'hybrid' (règles, puis Jev si les règles ne trouvent rien), 'typesafe' (Jev pour chaque message),
+  // 'rules' (règles uniquement). Sans clé TypeSafe, l'extension fonctionne toujours en 'rules'.
   const DEFAULTS = {
-    reply: 'Oui', settleMs: 1800, clickApprovals: true,
+    mode: 'hybrid', threshold: 0.9, reply: 'Oui', settleMs: 1800, clickApprovals: true,
     assistantSelector: '', userSelector: '', inputSelector: '', sendSelector: '', stopSelector: ''
   };
   const SELECTOR_FIELDS = ['assistantSelector', 'userSelector', 'inputSelector', 'sendSelector', 'stopSelector'];
@@ -48,6 +50,10 @@
   function validateSettings(input) {
     const settings = {};
     const source = { ...DEFAULTS, ...input };
+    settings.mode = source.mode;
+    if (!['hybrid', 'typesafe', 'rules'].includes(settings.mode)) throw new Error('Mode invalide.');
+    settings.threshold = Number(source.threshold);
+    if (!Number.isFinite(settings.threshold) || settings.threshold < 0.5 || settings.threshold > 1) throw new Error('Seuil Jev : entre 0,5 et 1.');
     settings.settleMs = Number(source.settleMs);
     if (!Number.isFinite(settings.settleMs) || settings.settleMs < 500 || settings.settleMs > 15000) throw new Error('Délai : entre 500 et 15000 ms.');
     settings.reply = String(source.reply || '').trim();

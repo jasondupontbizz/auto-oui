@@ -11,7 +11,7 @@
     return;
   }
   const C = globalThis.AutoOuiCore, A = globalThis.AutoOuiAdapters;
-  let enabled = false, settings = C.DEFAULTS, busy = false, epoch = 0;
+  let enabled = false, settings = C.DEFAULTS, jevActive = false, busy = false, epoch = 0;
   let route = location.href, candidate = '', stableSince = 0, lastStatus = '', retryAt = 0;
   const decisions = new Map();
   let interval;
@@ -21,11 +21,11 @@
     if (result?.error) throw new Error(result.error);
     return result;
   }
-  function status(state, detail = '') {
-    const key = `${state}:${detail}`;
+  function status(state, detail = '', score) {
+    const key = `${state}:${detail}:${score}`;
     if (key === lastStatus) return;
     lastStatus = key;
-    message({ type: 'status', status: { state, detail } }).catch(() => {});
+    message({ type: 'status', status: { state, detail, score } }).catch(() => {});
   }
   function storageKey() { return 'auto-oui:handled:' + location.pathname + location.search; }
   function handled() {
@@ -40,11 +40,13 @@
   function apply(config) {
     epoch++; enabled = Boolean(config.enabled); candidate = ''; stableSince = 0; retryAt = 0; lastStatus = '';
     if (config.settings) settings = C.validateSettings(config.settings);
+    // Jev is used only when the background confirms a key is saved and the API host is allowed.
+    jevActive = Boolean(config.jev); decisions.clear();
     clearInterval(interval);
     if (enabled) {
       try { A.validateSelectors(settings); } catch { enabled = false; status('Erreur', 'Sélecteur CSS invalide.'); return; }
       interval = setInterval(tick, 700);
-      status('Actif', 'En attente d’une demande d’approbation.');
+      status('Actif', 'En attente d’une demande d’approbation.' + (jevActive && settings.mode !== 'rules' ? ' Jev actif.' : ''));
       tick();
     }
   }
@@ -94,12 +96,36 @@
       let verdict = decisions.get(sig);
       if (!verdict) {
         status('Analyse', 'Détection de la demande…');
-        verdict = { approve: C.localApproval(latest.text), source: 'règles locales' };
-        decisions.set(sig, verdict);
-        if (decisions.size > 100) decisions.delete(decisions.keys().next().value);
+        const local = C.localApproval(latest.text);
+        const mode = jevActive ? settings.mode : 'rules';
+        if (mode === 'rules' || (mode === 'hybrid' && local)) {
+          verdict = { approve: local, source: 'règles locales' };
+        } else {
+          try {
+            if (latest.text.length > 24000) throw new Error('Message trop long pour Jev (plus de 24 000 caractères).');
+            const result = await message({ type: 'classify', text: latest.text, context: latest.context });
+            if (typeof result?.probability !== 'number' || !Number.isFinite(result.probability) || result.probability < 0 || result.probability > 1) throw new Error('Réponse TypeSafe invalide.');
+            verdict = { approve: result.probability >= settings.threshold, score: result.probability, source: 'Jev' };
+          } catch (error) {
+            // Never approve because of an error: fall back to the built-in rules' verdict.
+            verdict = { approve: local, source: 'règles locales (Jev indisponible)', fallback: error.message };
+          }
+        }
+        // A fallback verdict is not cached, so Jev is asked again later.
+        if (!verdict.fallback) {
+          decisions.set(sig, verdict);
+          if (decisions.size > 100) decisions.delete(decisions.keys().next().value);
+        }
       }
       if (!fresh(sig, token)) return;
-      if (!verdict.approve) { status('En attente', 'Ce message ne demande pas d’approbation.'); return; }
+      if (!verdict.approve) {
+        if (verdict.fallback) {
+          retryAt = Date.now() + 30000;
+          status('Jev indisponible', `${verdict.fallback} Règles intégrées : pas de demande détectée. Nouvel essai dans 30 s.`);
+          return;
+        }
+        status('En attente', 'Ce message ne demande pas d’approbation.', verdict.score); return;
+      }
       if (A.streaming(settings) || A.inputValue(input).trim()) return;
       A.fill(input, settings.reply);
       let send;
@@ -125,7 +151,7 @@
         if (!enabled || epoch !== token || location.href !== route) return;
         if (!A.inputValue(input).trim() || signature(A.lastMessage(settings)) !== sig || A.streaming(settings)) { acknowledged = true; break; }
       }
-      if (acknowledged) status('Réponse envoyée', `« ${settings.reply} » (${verdict.source})`);
+      if (acknowledged) status('Réponse envoyée', `« ${settings.reply} » (${verdict.source})`, verdict.score);
       else status('Envoi à vérifier', 'Clic effectué, réception non confirmée. Aucun renvoi automatique.');
     } catch (error) {
       retryAt = Date.now() + 30000;

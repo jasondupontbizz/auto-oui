@@ -7,10 +7,13 @@
   <section class="state"><span id="dot" class="dot"></span><div><strong id="state">Désactivé</strong><p id="detail">Active cet onglet pour commencer.</p></div></section>
   <button id="toggle" class="primary">Activer sur cet onglet</button>
   <p id="error" class="error" role="alert"></p>
+  <div class="row"><span>Jev (TypeSafe)</span><span id="jev">Vérification…</span></div>
   <p class="warn">⚠️ L’agent pourra agir sans ta confirmation. Désactive Auto-Oui pour les actions sensibles (paiements, e-mails, suppressions…).</p>
   <button id="diagnostics" class="secondary">Copier le diagnostic de cet onglet</button>
   <textarea id="diagnosticOutput" readonly hidden aria-label="Diagnostic de l’extension"></textarea>
   <details><summary>Réglages</summary>
+    <label>Détection<select id="mode"><option value="hybrid">Hybride : règles, puis Jev si besoin</option><option value="typesafe">Jev pour chaque message</option><option value="rules">Règles intégrées uniquement</option></select></label>
+    <label>Seuil Jev<input id="threshold" type="number" min="0.5" max="1" step="0.01"></label>
     <label>Réponse envoyée<input id="reply" type="text" maxlength="500"></label>
     <label>Délai de stabilité (ms)<input id="settleMs" type="number" min="500" max="15000" step="100"></label>
     <label class="check"><input id="clickApprovals" type="checkbox">Cliquer aussi les boutons d’approbation</label>
@@ -23,7 +26,14 @@
       <label>Bouton Arrêter la génération<input id="stopSelector" placeholder="[data-testid='stop-button']"></label>
     </details>
     <button id="save" class="secondary">Enregistrer les réglages</button>
+    <details id="jevBox"><summary>Clé TypeSafe (optionnelle)</summary>
+      <p class="help">Avec ta propre clé TypeSafe, Jev juge les formulations ambiguës. Sans clé, seules les règles intégrées sont utilisées et rien ne quitte ton navigateur. Avec une clé, le dernier message de l’agent (et jusqu’à 3 messages de contexte) est envoyé à l’API TypeSafe pour analyse.</p>
+      <p id="keyState" class="help"></p>
+      <label>Clé API TypeSafe<input id="typesafeKey" type="password" autocomplete="off" spellcheck="false" placeholder="Colle ta clé ici"></label>
+      <button id="saveKey" class="secondary">Enregistrer la clé</button>
+      <button id="removeKey" class="secondary" hidden>Supprimer la clé</button>
+    </details>
   </details>
-  <p class="foot">Actif uniquement dans cet onglet. Le dernier message peut être traité dès l’activation. Tout reste dans ton navigateur : aucune donnée n’est envoyée ailleurs.</p>
-  <script src="core.js"></script><script src="sites.js"></script><script src="popup.js"></script>
+  <p class="foot">Actif uniquement dans cet onglet. Le dernier message peut être traité dès l’activation. Sans clé TypeSafe, tout reste dans ton navigateur.</p>
+  <script src="core.js"></script><script src="sites.js"></script><script type="module" src="popup.js"></script>
 </body></html>
