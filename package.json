@@ -1,0 +1,10 @@
+{
+  "name": "auto-oui",
+  "version": "1.0.0",
+  "description": "Extension Chrome qui répond « Oui » automatiquement aux demandes d'approbation des agents IA.",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": { "test": "node --test tests/" },
+  "devDependencies": { "jsdom": "^26.1.0" }
+}
